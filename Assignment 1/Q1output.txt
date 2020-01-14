@@ -1,0 +1,85 @@
+
+Optimal solution found.
+
+
+Optimal solution found.
+
+P1:
+L1 norm optimisation
+Objective function value: 10.2583
+Time required: 8.944
+L2 norm optimisation
+Objective function value: 2.3888
+Time required: 0.13402
+Linf norm optimisation
+Objective function value: 0.60805
+Time required: 0.15329
+
+Optimal solution found.
+
+
+Optimal solution found.
+
+P2:
+L1 norm optimisation
+Objective function value: 33.6072
+Time required: 0.15154
+L2 norm optimisation
+Objective function value: 4.4044
+Time required: 0.02891
+Linf norm optimisation
+Objective function value: 0.57956
+Time required: 0.14538
+
+Optimal solution found.
+
+
+Optimal solution found.
+
+P3:
+L1 norm optimisation
+Objective function value: 143.2585
+Time required: 3.1727
+L2 norm optimisation
+Objective function value: 9.3897
+Time required: 0.22486
+Linf norm optimisation
+Objective function value: 0.61347
+Time required: 1.4018
+
+
+Optimal solution found.
+
+
+Optimal solution found.
+
+P4:
+L1 norm optimisation
+Objective function value: 277.1812
+Time required: 36.6344
+L2 norm optimisation
+Objective function value: 12.9059
+Time required: 0.047582
+Linf norm optimisation
+Objective function value: 0.5936
+Time required: 12.5497
+
+
+
+Optimal solution found.
+
+
+
+
+Optimal solution found.
+
+P5:
+L1 norm optimisation
+Objective function value: 571.6398
+Time required: 485.412
+L2 norm optimisation
+Objective function value: 18.5526
+Time required: 0.774
+Linf norm optimisation
+Objective function value: 0.60352
+Time required: 163.1231
