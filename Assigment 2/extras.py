@@ -31,7 +31,7 @@ tol = 1e-12
 x_min = newton(x0, df_dx,d2f_dx2,tol)
 
 print("Minimum of f(x)={} found at x={} to a tolerance of {}".format(f(x_min), x_min, tol))
-x = np.linspace(-2,2,200)
+x = np.linspace(-10,10,200)
 y = f(x)
 plt.plot(x,y, zorder=1)
 plt.xlabel("x")

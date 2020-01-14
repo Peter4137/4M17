@@ -16,10 +16,16 @@ class Problem:
         self.all_x = [self.x]
         self.all_costs = [self.cost]
 
+        self.archive_length = 10
+
         self.archive = {
             "best_x": self.x,
             "best_cost": self.cost,
-            "best_index": 0
+            "best_index": 0,
+            "resets":[],
+            "best_dissimilar_cost":[],
+            "best_dissimilar_x":[],
+            "all_best_costs":[]
             }
 
     def update_archive(self, iteration):
@@ -27,6 +33,24 @@ class Problem:
             self.archive["best_x"] = self.x
             self.archive["best_cost"] = self.cost
             self.archive["best_index"] = iteration
+        
+        if len(self.archive["best_dissimilar_cost"]) < self.archive_length:
+            self.archive["best_dissimilar_cost"].append(self.cost)
+            self.archive["best_dissimilar_x"].append(self.x)
+        else:
+            dissimilar = True
+            for solution in zip(self.archive["best_dissimilar_x"], self.archive["best_dissimilar_cost"]):
+                if np.linalg.norm(solution[0]-self.x, 2) < 0.5:
+                    dissimilar = False
+                    if self.cost < solution[1]:
+                        pos = self.archive["best_dissimilar_cost"].index(solution[1])
+                        self.archive["best_dissimilar_x"][pos] = self.x
+                        self.archive["best_dissimilar_cost"][pos] = self.cost
+        
+            if dissimilar and self.cost < max(self.archive["best_dissimilar_cost"]):
+                pos = self.archive["best_dissimilar_cost"].index(max(self.archive["best_dissimilar_cost"]))
+                self.archive["best_dissimilar_x"][pos] = self.x
+                self.archive["best_dissimilar_cost"][pos] = self.cost
 
     def probability_accept(self, new_cost, x_step):
         d_bar = np.sum(np.abs(x_step))
@@ -49,16 +73,16 @@ class Problem:
         return -avg_cost_step/np.log(chi_0)
 
     def check_restart(self, restart_count):
-        restart_condition = 1000
+        restart_condition = 2000
         if restart_count - self.archive["best_index"] > restart_condition:
-            print("No new best solution found in {} iterations, restarting at best known solution".format(restart_condition))
+            # print("No new best solution found in {} iterations, restarting at best known solution".format(restart_condition))
             return True
         return False
 
     def solve(self, plot_convergence=False, plot_path=False):
-        print("Running SA algorithm")
+        # print("Running SA algorithm")
         self.temperature = self.initial_survey()
-        print("Initial temperature: {}".format(self.temperature))
+        # print("Initial temperature: {}".format(self.temperature))
         iterations = 0
         acceptances = 0
         restart_count = 0
@@ -76,12 +100,14 @@ class Problem:
                 self.x = new_x
                 self.cost = self.f_penalty(self.x)
                 self.update_d(x_step)
+                self.archive["all_best_costs"].append(self.archive["best_cost"])
 
             self.update_archive(iterations)
 
             if self.check_restart(restart_count):
                 self.x = self.archive["best_x"]
                 self.cost = self.archive["best_cost"]
+                self.archive["resets"].append(len(self.all_x))
                 restart_count = 0
 
             if iterations % self.parameters[2] == 0 or acceptances > self.parameters[2]:
@@ -104,10 +130,23 @@ class Problem:
         return self.x, self.cost, self.all_x, self.all_costs
 
     def plot_convergence(self):
-        plt.plot(self.all_costs)
+        plt.plot(self.all_costs, label="Current cost")
         plt.xlabel('Iteration number')
         plt.ylabel('Objective function')
+        for xi in self.archive["resets"]:
+            plt.axvline(xi, ls="--", color="red")
+        plt.plot(self.archive["all_best_costs"], color="orange", label="Best cost")
+        plt.axhline(-14.83795*self.x.size, ls="--", color="green", label="Global optimum")
+        plt.legend()
         plt.grid(True)
+        plt.show()
+
+    def plot_dissimilar_solutions(self):
+        X,Y,Z = self.contours()
+        plt.contour(X,Y,Z, zorder=-1)
+        [plt.scatter(x[0], x[1], facecolors='black', edgecolors='black', zorder=1, marker='x', s=50) for x in self.archive["best_dissimilar_x"]]
+        plt.xlabel("x0")
+        plt.ylabel("x1")
         plt.show()
 
     def contours(self):
@@ -195,15 +234,21 @@ def run_multiple(n):
     return good_min_found
 
 def parameter_problem(u):
+    good = 0
     max_iterations = 10000
     dimensions = 5
     total = 0
-    for i in range(5):
+    tests = 50
+    for i in range(tests):
         np.random.seed(i)
         problem = Problem(max_iterations, dimensions, bound, u)
         problem.solve()
         total += problem.archive["best_cost"]
-    return total
+        if problem.archive["best_cost"] < -73.44:
+            print(i)
+            good+=1
+    print(good)
+    return total/tests
 
 np.random.seed(1)
 
@@ -211,23 +256,41 @@ max_iterations = 10000
 dimensions = 5
 bound = 2
 
-# 86% for 0.95, 0.25, 500
-# 13% for 0.95, 0.1, 500
-# 61% for 0.95, 0.25, 100
-# 90% for 0.95, 0.25, 1000
-# 90% for 0.95, 0.25, 10000
+print(parameter_problem([0.95, 0.1, 300]))
 
+# neighborhood_sizes = np.linspace(0.05, 0.25, 9) # np.array([0.05,0.01,  0.05, 0.1, 0.2, 0.3])
+# chain_lengths  = np.linspace(100, 1000, 10) # np.array([100, 200, 500, 1000, 2000])
+# ns, cl = np.meshgrid(neighborhood_sizes, chain_lengths)
+# print(chain_lengths)
+# print(neighborhood_sizes)
+# A = np.zeros((chain_lengths.size, neighborhood_sizes.size))
 
-alpha = 0.95
-neighborhood_size = 0.1
-chain_length = 1000
-result = opt.minimize(parameter_problem, np.array([0.95, 0.1, 1000]), options={"maxiter": 10, "disp":True})
-print(result.x)
-print(result.fun)
+# for i, neighborhood_size in enumerate(neighborhood_sizes):
+#     for j, chain_length in enumerate(chain_lengths):
+#         print(" === {},{} ===".format(i,j))
+#         A[j,i] = parameter_problem(np.array([0.95, neighborhood_size, chain_length]))
+
+# print(A.shape)
+# print(ns.shape)
+# print(cl.shape)        
+# cp = plt.contourf(ns, cl, A)
+# cbar = plt.colorbar(cp)
+# cbar.set_label("Average best algorithm result")
+# plt.ylabel("Markov Chain Length")
+# plt.xlabel("Neighborhood size")
+# plt.show()
+
+# alpha = 0.95
+# neighborhood_size = 0.175
+# chain_length = 500
+# result = opt.minimize(parameter_problem, np.array([0.95, 0.1, 1000]), options={"maxiter": 3, "disp":True})
+# print(result.x)
+# print(result.fun)
 # result = run_multiple(20)
 
-print("{}% of tests produced 'good' solutions".format(100*sum(result)/len(result)))
-# problem = Problem(max_iterations, dimensions, bound, [alpha, neighborhood_size, chain_length])
+# print("{}% of tests produced 'good' solutions".format(100*sum(result)/len(result)))
+# problem = Problem(max_iterations, dimensions, bound, [0.95, 0.1, 300])
+
 # a = 0
 # for i in range(100):
 #     a += problem.initial_survey()
@@ -235,4 +298,5 @@ print("{}% of tests produced 'good' solutions".format(100*sum(result)/len(result
 # print(a/100)
 # problem.plot_f_adj()
 # problem.solve(plot_convergence=True, plot_path=True)
+# problem.plot_dissimilar_solutions()
 
